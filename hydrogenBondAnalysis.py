@@ -3,12 +3,12 @@ import numpy as np
 from itertools import product
 
 # read in a frame of the trajectory file
-input_file = 'dump.production.lammpstrj'
+input_file = './data/dump.production.lammpstrj'
 masses = {'C': 12.01, 'O': 15.999}#, 'H': 1.007}
 snapshots_to_read = 501
 num_atoms = 3904 # Total atoms in a single snapshot
 num_MOF_atoms = 3648
-MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6}
+MOF_Formula = {'C': 48, 'H': 28, 'O': 32, 'Zr': 6}
 loading = 2
 atoms_per_adsorbate = 4 # atoms in the diffusing molecule
 MOF_atoms = [444]
