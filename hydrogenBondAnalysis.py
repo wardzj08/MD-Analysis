@@ -40,12 +40,9 @@ totalAceCount = 0
 for snp in range(snapshots_to_read):
         print('Snapshot Number:', snp + 1)
         # Reads in 1 snapshot at a time
-        if snp == 0:
-           df = pd.read_csv(input_file, skiprows = 9, nrows = num_atoms, names = ['Atom', 'mol', 'type', 'element', 'x', 'y', 'z'], usecols=[0,1,2,3,4,5,6], delim_whitespace=True)
-        else:
-            skips = num_atoms*snp + 9*(snp+1)
-            df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], usecols=[0,1,2,3,4,5,6], delim_whitespace=True)
 
+        skips = num_atoms*snp + 9*(snp+1)
+        df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], delim_whitespace=True)
 
          # Select oxygen molecules in acetone (so all oxygens not in the MOF)
          # something like if O and if mol # != mol number MOF
