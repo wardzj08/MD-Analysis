@@ -3,17 +3,21 @@ import numpy as np
 from itertools import product
 
 # read in a frame of the trajectory file
-input_file = './data/dump.production.lammpstrj'
+input_file = 'dump.production.lammpstrj'
 masses = {'C': 12.01, 'O': 15.999}#, 'H': 1.007}
 snapshots_to_read = 501
 num_atoms = 3904 # Total atoms in a single snapshot
 num_MOF_atoms = 3648
-MOF_Formula = {'C': 48, 'H': 28, 'O': 32, 'Zr': 6}
+MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6}
 loading = 2
 atoms_per_adsorbate = 4 # atoms in the diffusing molecule
 MOF_atoms = [444]
 mu3_O = 4 # 'Type' of molecule that represents mu3 ohs
 MOF_H = 2 # 'Type' of molecule that represents hydrogens in the MOF (UiO66)
+
+def distanceFormula(Loc1, Loc2):
+	SUM = (Loc2[0] - Loc1[0])**2 + (Loc2[1] - Loc1[1])**2 + (Loc2[2]-Loc1[2])**2
+	return SUM**.5
 
 # Function that checks that the number of certain atoms match expectations
 # Checks the number of hydrogen atoms in the MOF against the expected value
@@ -36,9 +40,12 @@ totalAceCount = 0
 for snp in range(snapshots_to_read):
         print('Snapshot Number:', snp + 1)
         # Reads in 1 snapshot at a time
+        if snp == 0:
+           df = pd.read_csv(input_file, skiprows = 9, nrows = num_atoms, names = ['Atom', 'mol', 'type', 'element', 'x', 'y', 'z'], usecols=[0,1,2,3,4,5,6], delim_whitespace=True)
+        else:
+            skips = num_atoms*snp + 9*(snp+1)
+            df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], usecols=[0,1,2,3,4,5,6], delim_whitespace=True)
 
-        skips = num_atoms*snp + 9*(snp+1)
-        df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], delim_whitespace=True)
 
          # Select oxygen molecules in acetone (so all oxygens not in the MOF)
          # something like if O and if mol # != mol number MOF
@@ -58,9 +65,11 @@ for snp in range(snapshots_to_read):
         if snp == 0:
             num_atoms_check(num_MOF_atoms, loading, len(MOFHydrogen), len(Ace_Oxygen), MOF_Formula)
 
+
         # Create a dataframe of mu3 O-H pairings
         # Every hydrogen paired with every mu3 oxygen
         # this is used to check the distance from each mu3 oxygen for each hydrogen
+
         # Pairing of atom numbers for all MOF Hs and mu3 Os
         pairedHmu3O = pd.DataFrame(list(product(MOFHydrogen['Atom'], MOFOxygen['Atom'])), columns = ['HAtom', 'OAtom'])
         print('Number of H-mu3O pairings (should equal number of MOF Hydrogens * number of mu3 Oxygens):', len(pairedHmu3O))
@@ -137,7 +146,15 @@ for snp in range(snapshots_to_read):
         Ace_mu3HCount += len(mu3HAceO_minimumPerAceOxygen[mu3HAceO_minimumPerAceOxygen <3.0])
         totalAceCount += len(Ace_Oxygen)
 
-print('Values across {0} snapshots:'.format(snapshots_to_read))
-print('Number of hydrogen bonding acetone molecules:', Ace_mu3HCount)
-print('Total number of acetone molecules:',totalAceCount)
-print('Fraction of acetone molecules in hydrogen bonds with mu3OHs:', Ace_mu3HCount/totalAceCount)
+
+print(Ace_mu3HCount)
+print(totalAceCount)
+print(Ace_mu3HCount/totalAceCount)
+# Calculate distances between acetone O and mu3 OH hydrogen
+# Maybe only take the minimum for each acetone molecule (so the list does not have distances for every acetone to every mu3 OH group)
+# Then count number of acetone O atoms within range (ex 3 angstroms)
+
+
+# do for each frame, calculate overall fraction of acetone molecules engaged in H bonding
+
+# Potential histogram of distances from mu3 group; ie acetone within 3 angstroms 4 angstroms 5 angstroms etc
