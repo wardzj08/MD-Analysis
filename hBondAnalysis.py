@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from itertools import product
+pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
 input_file = './data/dump.productionAce1load.lammpstrj'
@@ -57,7 +58,6 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
        # Overall data frame of ATOM1-ATOM2
         Overall = pd.concat([df1_repeated, df2_repeated, distances], axis=1, sort=False)
 
-        pd.set_option('display.max_columns', None)
         print('Overall')
         print(Overall.shape)
         #print(Overall[:5]) # Can check that distances match coordinate values and that atom numbers are coorect by comparing atom numbers in this df to atom numbers in the dump file

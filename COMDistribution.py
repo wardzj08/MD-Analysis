@@ -103,7 +103,6 @@ MOF_atoms = [444]
 input_file = 'dump.production.lammpstrj'
 # Call to center of mass calculator
 coms, err = calc_center_of_masses(input_file, masses, snapshots_to_read, num_atoms, atoms_per_adsorbate, MOF_atoms)
-
 # Center of mass to 3D histogram data file function. 
 # Input - center_of_masses - array of center of masses for adsorbate molecules
 # cell_dimensions - dimensions of the overall system, given in dictionary format {'x': xdim, 'y': ydim, 'z': zdim}
