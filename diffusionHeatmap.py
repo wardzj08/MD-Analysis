@@ -8,15 +8,11 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.image as mpimg 
 
-df = pd.read_csv('dump.COM.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
+df = pd.read_csv('dump.COMAce1Load.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
 print(df.iloc[1])
-# Compress into 2 dimensions by adding x,y; y,z; x,z
-#totaled = pd.DataFrame({'x': df.x, 'y': df.y})
-#totaled = totaled.append(pd.DataFrame({'x': df.y, 'y': df.z}), ignore_index=True)
-#totaled = totaled.append(pd.DataFrame({'x': df.x, 'y': df.z}), ignore_index=True)
-#print(len(totaled))
+
 sns.set(rc={'figure.figsize':(10,10)})
-framework_img = mpimg.imread('UiO66frame1.png')
+framework_img = mpimg.imread('UiO66frame2Nosim.png')
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal')
 htmp = sns.kdeplot(df.x, df.y,
@@ -24,5 +20,11 @@ htmp = sns.kdeplot(df.x, df.y,
 #im.collections[0].set_alpha(0)
 plt.imshow(framework_img, aspect = htmp.get_aspect(),
           extent = [0, 41.4008, 0, 41.4008], zorder = 1)#im.get_xlim() + im.get_ylim(), zorder = 1)
+# For no labels
+plt.xlabel("")
+plt.ylabel("")
+# for no tick marks
+plt.xticks([])
+plt.yticks([])
 plt.show()
-plt.savefig('MoleculeDistributioninUiO66.png', bbox_inches = 'tight')
+plt.savefig('MoleculeDistributionAce1LoadinUiO66TESTnosimnoTicks.png', bbox_inches = 'tight')
