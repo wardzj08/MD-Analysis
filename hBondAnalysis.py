@@ -4,11 +4,11 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.productionAce1load.lammpstrj'
+input_file = './data/dump.production.lammpstrj'
 snapshots_to_read = 501# Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
-loading = 1 # level of loading  (diffusing molecules per primative cell)
+loading = 2 # level of loading  (diffusing molecules per primative cell)
 atoms_per_adsorbate = 4 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)
@@ -19,7 +19,7 @@ MOF_atoms = [444] # MOF molecule number(s) in the LAMMPSTRJ file
 mu3_O = 4 # 'Type' of molecule that represents mu3 Oxygens in UiO66
 MOF_H = 2 # 'Type' of molecule that represents hydrogens in the MOF (UiO66)
 mu3OHBondDist = 1.2 # angstrom distance for the mu3OH bond
-hydrogenBondDist = 3 # Acetone-Hydrogen hydrogen bonding distance
+hydrogenBondDist = 3.3 # Acetone-Hydrogen hydrogen bonding distance
 
 # Determines if  atom1s are within cutoff (bonding) distance of atom2s
 # for finding mu3 hydrogens, pass dataframe of hydrogens in as atom1 and mu3 oxygens as atom2
@@ -65,7 +65,7 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
 
         # if oneBondPerAtom1 then finds the minimum distance betweeen atoms for each unique ATOM1 and ignores all other pairings
         # Then checks the remaining pairs (1 for each ATOM1) against the cutoff distance
-        # Might be useful for 0 loading step to avoid many acetones being hydrogen bonded to 1 mu3OH
+        # Might be useful for 0 loading step to avoid many acetones being hydrogen bonded to 1 mu3OH (artificially limit number of bonds possible)
         if oneBondPerAtom1:
             # This filters out all ATOM2s but the one closest to ATOM1
             minimumDistPerMover = Overall.groupby('Atom1')['Distance'].min()
@@ -86,7 +86,7 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
 
 # Function that checks that the number of certain atoms match expectations
 # Checks the number of hydrogen atoms in the MOF against the expected value
-# Checks number of acetone molecules against the expected value
+# Checks number of acetone molecules against the expected value at the given loading
 def num_atoms_check(num_MOF_atoms, loading, readinHatoms, readinAceOatoms, MOF_Formula):
 
 	calculatedHatoms = MOF_Formula['H'] * num_MOF_atoms/(sum(MOF_Formula.values()))
