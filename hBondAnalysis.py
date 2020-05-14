@@ -4,15 +4,15 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.production.lammpstrj'
-snapshots_to_read = 501# Number of timesteps to read from traj file
+input_file = './data/dump.productionAce1load.lammpstrj'
+snapshots_to_read = 501 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
-loading = 2 # level of loading  (diffusing molecules per primative cell)
+loading = 1 # level of loading  (diffusing molecules per primative cell)
 atoms_per_adsorbate = 4 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)
-num_atoms = int(num_MOF_atoms + loading * atoms_per_adsorbate * num_MOF_atoms/(sum(MOF_Formula.values())))
+num_atoms = int(num_MOF_atoms + loading * atoms_per_adsorbate * num_MOF_atoms / (sum(MOF_Formula.values())))
 print('Atoms in system: ', num_atoms)
 
 MOF_atoms = [444] # MOF molecule number(s) in the LAMMPSTRJ file
@@ -29,17 +29,16 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
 
         # Create a dataframe of ATOM1-ATOM2 pairings
         # Every ATOM1 paired with every ATOM2
-        # The df should be each ATOM1 paired with each ATOM2
 
         # By concatanating the coordinates of ATOM1 k times, a list that matches the number of ATOM1-ATOM2 pairings is
         # created, where k is the number of ATOM2s. This list goes through every ATOM1 atom 1 time before repeating the list again k times
 
-        # In contrast, the ATOM2 coordinate list is repeated n times for each ATOM1 before moving to the next atom
+        # In contrast, each individual ATOM2 is repeated n times before moving to the next atom
         # where n is the number of ATOM1s in the system
 
         # By joining these 2 dataframes a dataframe is formed that has the format:
         # ATOM1#; ATOM1 X coord; ATOM1 Y coord; ATOM1 Z coord; ATOM2#; ATOM2 X coord; ATOM2 Y coord; ATOM2 Z coord;
-        # This dataframe is also joined by a Distance list, which is the calculated distance between the two atoms atoms in the given row
+        # This dataframe is later joined by a cooresponding distance vector
         # Calculations can be checked easily by printing the Overall dataframe
         # The atom numbers match those in the trajectory file, so can be cross-refrenced there
 
@@ -55,7 +54,9 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
         Loc2 = np.array(df2_repeated[['2x', '2y', '2z']])
 
         # Vectorized distance calculation
-        distances = pd.DataFrame(np.sqrt((Loc1[:, 0] - Loc2[:, 0]) ** 2 + (Loc1[:, 1] - Loc2[:, 1]) ** 2 + (Loc1[:, 2] - Loc2[:, 2]) ** 2), columns = ['Distance'])
+        # L1,L2 are the 2 arrays of locations for atom1 and atom2 respectivley
+        calcDist = lambda L1,L2 : np.sqrt((L1[:, 0] - L2[:, 0]) ** 2 + (L1[:, 1] - L2[:, 1]) ** 2 + (L1[:, 2] - L2[:, 2]) ** 2)
+        distances = pd.DataFrame(calcDist(Loc1,Loc2), columns = ['Distance'])
 
        # Overall data frame of ATOM1-ATOM2
         Overall = pd.concat([df1_repeated, df2_repeated, distances], axis=1).reset_index(drop=True)
@@ -66,19 +67,21 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
         # if oneBondPerAtom1 then finds the minimum distance betweeen atoms for each unique ATOM1 and ignores all other pairings
         # Then checks the remaining pairs (1 for each ATOM1) against the cutoff distance
         # Might be useful for 0 loading step to avoid many acetones being hydrogen bonded to 1 mu3OH (artificially limit number of bonds possible)
+        # This would be a pure nearest neighbor implementation
+        # Also, with finite loading, setting oneBondPerAtom1 doesn't seem to matter for the result, which makes sense
         if oneBondPerAtom1:
             # This filters out all ATOM2s but the one closest to ATOM1
-            minimumDistPerMover = Overall.groupby('Atom1')['Distance'].min()
+            atom1NearestNeighbor = Overall.groupby('Atom1')['Distance'].min()
             # Checks against the cutoff value, storing only the pairs that are within that distance
-            BondsOccuring = pd.DataFrame({'Distance': minimumDistPerMover[minimumDistPerMover.values <= cutoff]})
+            BondsOccuring = pd.DataFrame({'Distance': atom1NearestNeighbor[atom1NearestNeighbor.values <= cutoff]})
             final = Overall[(Overall['Atom1'].isin(list(BondsOccuring.index))) & (Overall['Distance'].isin(BondsOccuring['Distance']))]
 
         # Else just check the pair distances against the cutoff distance
         # This has the possibility for more than 1 ATOM2 to be paired with 1 ATOM1 or vice versa
         else:
-            print("final")
-            print(Overall)
-            print(Overall.sort_values('Distance'))
+            #print("final")
+            #print(Overall)
+            #print(Overall.sort_values('Distance'))
             final = Overall[Overall['Distance'] < cutoff]
 
         #print('Number of bonded:', final.shape[0])
@@ -92,18 +95,18 @@ def num_atoms_check(num_MOF_atoms, loading, readinHatoms, readinAceOatoms, MOF_F
 	calculatedHatoms = MOF_Formula['H'] * num_MOF_atoms/(sum(MOF_Formula.values()))
 	# Check if the number of Hydrogen atoms in the MOF read in mataches the calculated value
 	if calculatedHatoms != readinHatoms:
-		raise ValueError('The number of H atoms in the MOF read in from the trajectory file do not match the number of H atoms calculated using the number of atoms in the MOF and the molecular formula of the MOF. Check that your trajectory file and the inputed values are correct.')
+		raise ValueError('The number of H atoms in the MOF read in from the trajectory file do not match the number of H atoms calculated using the number of atoms in the MOF and the molecular formula of the MOF. Check input.')
 
     # Number of acetone atoms should equal the number of primative cells time the number of adsorbate atoms per cell
 	calculatedAceOatoms = num_MOF_atoms/(sum(MOF_Formula.values())) * loading
 	if calculatedAceOatoms != readinAceOatoms:
-		raise ValueError('The number of Acetone O atoms read in from the trajectory file do not match the number of acetone atoms calculated. Check that your trajectory file and the inputed values are correct.')
+		raise ValueError('The number of Acetone oxygen atoms read in from the trajectory file do not match the number of acetone atoms calculated. Check that your trajectory file and the inputed values are correct.')
 
 # Overall counts for Acetone oxygen - mu3OH hydrogen bonding and total number of Acetone molecules
-Ace_mu3HCount = 0
-totalAceCount = 0
+Ace_mu3HCount = 0 # Count of Acetone oxygens engaged in hydrogen bonding
+totalAceCount = 0 # Count of total acetone molecules (also equals loading*primativeCells*numSnapshots)
 for snp in range(snapshots_to_read):
-        print('Snapshot Number:', snp + 1)
+        print('\nSnapshot Number:', snp + 1)
         # Reads in 1 snapshot at a time
         skips = num_atoms*snp + 9*(snp+1)
         df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], delim_whitespace=True)
@@ -119,8 +122,8 @@ for snp in range(snapshots_to_read):
         # Each of these have unique type values so they can be selected using only 1 identifier
         MOFHydrogen = df[(df['type'] == MOF_H)]
         MOFOxygen = df[(df['type'] == mu3_O)]
-        print('Number of Hydrogens in MOF:', len(MOFHydrogen))
-        print('Number of mu3 Oxygens in MOF:', len(MOFOxygen))
+        print('Number of Hydrogen in MOF:', len(MOFHydrogen))
+        print('Number of mu3-Oxygen in MOF:', len(MOFOxygen))
 
         # Only preform the check on the first snapshot/timestep
         # If the first is correct, the remaining should also be
@@ -131,8 +134,8 @@ for snp in range(snapshots_to_read):
 
         # Finds mu3O-H pairs that are within the bonding cutoff distance
         # Atom1 in mu3OH is oxygen, Atom2 is hydrogen; x1,y1,z1 are coords for oxygen; x2,y2,z2 are coords for hydrogen
-        mu3OH = findMolPairsWithinDistance(MOFOxygen, MOFHydrogen, mu3OHBondDist, oneBondPerAtom1 = False)
-        print('mu3O-H Pairs:')
+        mu3OH = findMolPairsWithinDistance(MOFOxygen, MOFHydrogen, mu3OHBondDist, oneBondPerAtom1 = True)
+        #print('mu3O-H Pairs:')
 #        print(mu3OH.shape)
         #print(mu3OH.shape)
         # Some dataframe rearanging to format it for passing back into findMolPairsWithinDistance
@@ -142,16 +145,18 @@ for snp in range(snapshots_to_read):
         mu3H.columns = ['Atom', 'x', 'y', 'z']
 
         # show dataframe of just mu3 hydrogen
-        print('mu3Hs:')
-        print(mu3H[:5])
+        print('Number of mu3-Hs: ', len(mu3H))
+       # print('mu3H df: ')
+       #print(mu3H[:5])
 
         # Finds mu3H-AcetoneO pairs that are within the hydrogen bonding cutoff distance
         # Atom1 in is acetone's oxygen, Atom2 is mu3 Hydrogen; x1,y1,z1 are coords for the oxygen; x2,y2,z2 are coords for hydrogen
-        aceOmu3H = findMolPairsWithinDistance(Ace_Oxygen, mu3H, hydrogenBondDist, oneBondPerAtom1 = False)
+        aceOmu3H = findMolPairsWithinDistance(Ace_Oxygen, mu3H, hydrogenBondDist, oneBondPerAtom1 = True)
 
-        # Show pairs of mu3 Hydrogen and acetone oxygen that are in hydrogen bonding distance
-        print('mu3H - Acetone O Hydrogen Bond Pairs:')
-        print(aceOmu3H)
+        # Show pairs of mu3 hydrogen and acetone oxygen that are in hydrogen bonding distance
+        print('Number of mu3OH - Acetone Hydrogen Bond Pairs: ', len(aceOmu3H))
+        #print('Acetone-mu3OH Bond df: ')
+        #print(aceOmu3H)
 
         # Add to count of acetone oxygen atoms that are in the hydrogen bonding distance to mu3 hydrogens
         Ace_mu3HCount += len(aceOmu3H)
@@ -159,7 +164,7 @@ for snp in range(snapshots_to_read):
         totalAceCount += len(Ace_Oxygen)
 
 
-print('Values across {0} snapshots:'.format(snapshots_to_read))
+print('\nValues across {0} snapshots:'.format(snapshots_to_read))
 print('Number of hydrogen bonding acetone molecules:', Ace_mu3HCount)
 print('Total number of acetone molecules:',totalAceCount)
 print('Fraction of acetone molecules in hydrogen bonds with mu3OHs:', float(Ace_mu3HCount)/float(totalAceCount))
