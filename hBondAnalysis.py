@@ -16,8 +16,9 @@ num_atoms = int(num_MOF_atoms + loading * atoms_per_adsorbate * num_MOF_atoms / 
 print('Atoms in system: ', num_atoms)
 
 MOF_atoms = [444] # MOF molecule number(s) in the LAMMPSTRJ file
-mu3_O = 4 # 'Type' of molecule that represents mu3 Oxygens in UiO66
-MOF_H = 2 # 'Type' of molecule that represents hydrogens in the MOF (UiO66)
+mu3_O = 4 # 'Type' of atom that represents mu3 Oxygens in UiO66
+MOF_H = 2 # 'Type' of atom that represents hydrogens in the MOF (UiO66)
+Ace_O = 6 # 'Type' of acetone oxygen atom
 mu3OHBondDist = 1.2 # angstrom distance for the mu3OH bond
 hydrogenBondDist = 3.3 # Acetone-Hydrogen hydrogen bonding distance
 
@@ -115,7 +116,7 @@ for snp in range(snapshots_to_read):
          # As a check the number of atoms in this should equal the number of Acetone molecules inserted
          # So for 2 loading per primative cell and 32 primative cells, there should be 64 Acetone oxygens
         # selects atoms that are Os and not in the MOF
-        Ace_Oxygen = df[(~df['mol'].isin(MOF_atoms)) & (df['element'] == 'O')]
+        Ace_Oxygen = df[df['type'] == Ace_O]
         print('Number of Acetone Oxygen Atoms:', len(Ace_Oxygen))
 
         # Store all MOF hydrogens and mu3 oxygens
@@ -134,7 +135,7 @@ for snp in range(snapshots_to_read):
 
         # Finds mu3O-H pairs that are within the bonding cutoff distance
         # Atom1 in mu3OH is oxygen, Atom2 is hydrogen; x1,y1,z1 are coords for oxygen; x2,y2,z2 are coords for hydrogen
-        mu3OH = findMolPairsWithinDistance(MOFOxygen, MOFHydrogen, mu3OHBondDist, oneBondPerAtom1 = True)
+        mu3OH = findMolPairsWithinDistance(MOFOxygen, MOFHydrogen, mu3OHBondDist, oneBondPerAtom1 = False)
         #print('mu3O-H Pairs:')
 #        print(mu3OH.shape)
         #print(mu3OH.shape)
@@ -151,7 +152,7 @@ for snp in range(snapshots_to_read):
 
         # Finds mu3H-AcetoneO pairs that are within the hydrogen bonding cutoff distance
         # Atom1 in is acetone's oxygen, Atom2 is mu3 Hydrogen; x1,y1,z1 are coords for the oxygen; x2,y2,z2 are coords for hydrogen
-        aceOmu3H = findMolPairsWithinDistance(Ace_Oxygen, mu3H, hydrogenBondDist, oneBondPerAtom1 = True)
+        aceOmu3H = findMolPairsWithinDistance(Ace_Oxygen, mu3H, hydrogenBondDist, oneBondPerAtom1 = False)
 
         # Show pairs of mu3 hydrogen and acetone oxygen that are in hydrogen bonding distance
         print('Number of mu3OH - Acetone Hydrogen Bond Pairs: ', len(aceOmu3H))
