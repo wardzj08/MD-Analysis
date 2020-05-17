@@ -26,7 +26,7 @@ AceDf = pd.DataFrame({'atom': [1,2,3,4,5, 6, 7, 8, 9],
 
 AceAtoms = [6,7,8,9]
 UiO66Atoms = [1,2,3,4,5]
-
+elements = ['C', 'H', 'O', 'O(mu3)', 'Zr', 'O(Ace)', 'C(Ace)', 'CH3(Ace)', 'CH3(Ace)']
 
 # Create a pairs list
 UiO66DfRep = UiO66Df[['atom', 'epsilon', 'sigma']].loc[UiO66Df.index.repeat(AceDf.shape[0])].reset_index(drop=True)
@@ -54,5 +54,12 @@ print(mixed)
 write_pairpotentials_tofile = 'mixedLJCOULPotentials.dat'
 with open(write_pairpotentials_tofile,'w') as f:
 	for val in mixed.values:
-		#if val[0] in
-		f.write(f'pair_coeff {int(val[0])} {int(val[1])} {round(val[2], 6)} {round(val[3], 6)} 12.5 0.0\n')
+		# If atom#1 is greater than atom#2 it is a repeat of a previous pair, and can be removed
+		if val[0] > val[1]:
+			continue
+		# If atom#1 is different from atom#2, use lj/cut, no charge interactions
+		if (val[0] in UiO66Atoms and val[1] in AceAtoms) or (val[0] in AceAtoms and val[1] in UiO66Atoms):
+			f.write(f'pair_coeff {int(val[0])} {int(val[1])} lj/cut {round(val[2], 6)} {round(val[3], 6)} # {elements[int(val[0])-1]} {elements[int(val[1])-1]}\n')
+		# else use lj/cut/coul/long, to include charge interactions
+		else:
+			f.write(f'pair_coeff {int(val[0])} {int(val[1])} lj/cut/coul/long {round(val[2], 6)} {round(val[3], 6)} # {elements[int(val[0])-1]} {elements[int(val[1])-1]}\n')
