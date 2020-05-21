@@ -4,11 +4,11 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.productionAce1load.lammpstrj'
+input_file = './data/dump.productionAce5load.lammpstrj'
 snapshots_to_read = 501 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
-loading = 1 # level of loading  (diffusing molecules per primative cell)
+loading = 5 # level of loading  (diffusing molecules per primative cell)
 atoms_per_adsorbate = 4 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)

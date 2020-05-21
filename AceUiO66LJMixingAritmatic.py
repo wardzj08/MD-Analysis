@@ -23,9 +23,11 @@ AceDf = pd.DataFrame({'atom': [1,2,3,4,5, 6, 7, 8, 9],
                       'sigma': [3.430851, 2.571134, 3.118146, 3.118146, 2.783168, 3.050, 3.820, 3.750, 3.750]
                       })
 
-
+# Unique identifiers for Atoms in each group
 AceAtoms = [6,7,8,9]
 UiO66Atoms = [1,2,3,4,5]
+# Element for each atom #. This is not necessary, but adds a comment to the end of each
+# pair_coeff line, stating the two elements envolved in the parameters on that line
 elements = ['C', 'H', 'O', 'O(mu3)', 'Zr', 'O(Ace)', 'C(Ace)', 'CH3(Ace)', 'CH3(Ace)']
 
 # Create a pairs list
@@ -38,14 +40,14 @@ AceDfRep.columns = ['Atom2', '2eps', '2sigma']
 # epsilon_mixed = sqrt(epsilon_i, epsilon_j)
 # sigma_mixed = 0.5(sigma_i, sigma_j)
 mixedEpsilon = lambda eps1, eps2 : np.sqrt(eps1 * eps2)
-mixedSigma = lambda sig1, sig2 : .5 * (sig1 +sig2)
+mixedSigma = lambda sig1, sig2 : .5 * (sig1 + sig2)
 
 # Preform calculations
 mxEp = pd.DataFrame(mixedEpsilon(AceDfRep['2eps'], UiO66DfRep['1eps']), columns = ['MixedEpsilon'])
 mxSig = pd.DataFrame(mixedSigma(AceDfRep['2sigma'], UiO66DfRep['1sigma']), columns = ['MixedSigma'])
 
 # final values
-# format: atom1(from UiO66), atom2(from Acetone), mixed epsilon value, mixed sigma value
+# format: atom1, atom2, mixed epsilon value, mixed sigma value
 mixed = pd.concat([UiO66DfRep['Atom1'], AceDfRep['Atom2'], mxEp, mxSig], axis=1).reset_index(drop=True)
 print(mixed)
 
