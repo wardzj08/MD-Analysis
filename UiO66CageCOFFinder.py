@@ -17,37 +17,39 @@ def calc_center_of_masses(input_file, mass_dict, snapshots_to_read, num_atoms, a
         skips = num_atoms*snp + 9*(snp+1)
         df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], delim_whitespace=True)
 
-        # Removes all atoms that belong to the MOF (in UiO-66 potential framework, mol = 444)
-        # If Framework has more than one mol number, passing a list of mol values will work
+        # Create df of tetra and octahedral cell atoms (using inputed lists of atoms for 1 octahedral and 1 tetrahedral cage)
         df = df[df['mol'].isin(MOF_atoms)]
         dfTetra = df[df['Atom'].isin(tetrahedral)]
         dfOcta = df[df['Atom'].isin(octahedral)]
 #        print(len(dfTetra))
 
+        # Map mass values for each element to all atoms in each df
         dfTetra['mass'] = dfTetra['element'].map(MOF_masses)
         dfOcta['mass'] = dfOcta['element'].map(MOF_masses)
  #       print(dfTetra.head())
 
+        # Calculate total masses for each cage
         OCTACOMDEN = np.sum(dfOcta['mass'])
         TETRACOMDEN = np.sum(dfTetra['mass'])
   #      print(OCTACOMDEN, TETRACOMDEN)
+        
+        # Function for calculating the COM in 1 dimension
+        # Inputs are atom position list in 1 dimension, masses of each atom, and the total mass of the group of atoms, 
+        CALCCOMDIR = lambda pos, mass, sumMass : np.sum(pos * mass) / sumMass
 
-        CALCCOMDIR = lambda pos,mass, sumMass : np.sum(pos * mass) / sumMass
-
+        # Calculate the COM in each dimension for each cage
         for pos in ['x', 'y', 'z']:
             posCOMT = CALCCOMDIR(dfTetra[pos], dfTetra['mass'], TETRACOMDEN)
             posCOMO = CALCCOMDIR(dfOcta[pos], dfOcta['mass'], OCTACOMDEN)
    #         print(posCOMT, posCOMO)
-    return COMs
+    return posCOMT, posCOMO
 
-# Mass dictionary parameter. Store each unique mass value with its corresponding element, to be called in the COM fucnction
-# These are parameters to change based on each system
-#masses = {'C': 12.01, 'O': 15.999}#, 'H': 1.007}
-snapshots_to_read = 1
-num_atoms = 4288
-atoms_per_adsorbate = 4
-MOF_atoms = [444]
-input_file = './data/dump.productionAce5load.lammpstrj'
-MOF_masses = {'C': 12.01, 'H': 1.01, 'O': 15.999, 'Zr': 91.224}
+
+snapshots_to_read = 1 # Read 1 snapshot to calculate COM, could look at more to see how COM changes as framework flexes, but it should remain more or less the same
+num_atoms = 4288 # Number of atoms in simulation
+atoms_per_adsorbate = 4 #  
+MOF_atoms = [444] # MOF molecule inteditifier(s)
+input_file = './data/dump.productionAce5load.lammpstrj' # file to read in
+MOF_masses = {'C': 12.01, 'H': 1.01, 'O': 15.999, 'Zr': 91.224} # masses of atoms in the MOF
 # Call to center of mass calculator
-coms = calc_center_of_masses(input_file, MOF_masses, snapshots_to_read, num_atoms, atoms_per_adsorbate, MOF_atoms)
+coms = calc_center_of_masses(input_file, MOF_masses, snapshots_to_read, num_atoms, atoms_per_adsorbate, MOF_atoms) # Calculate COM call
