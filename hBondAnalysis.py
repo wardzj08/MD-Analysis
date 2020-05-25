@@ -4,7 +4,7 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.productionAce1load.lammpstrj'
+input_file = './data/dump.productionAce1load.lammpstrj' # file to read trajectory from
 snapshots_to_read = 501 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF

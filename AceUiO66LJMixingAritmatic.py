@@ -1,23 +1,23 @@
 # Compute mixed lj potential parameters
-# Uses the aritmatic equations as stated in LAMMPS
+# Uses the arithmatic equations as stated by LAMMPS
 # Pass in two dataframes
-# Each holding atom type numbers, epsilon values, and sigma values
+# Each holding atom type numbers, epsilon values, and sigma values (parameters for lj equation)
 # Calculates mixed parameters for every pair of atoms between the two dfs
 # If all mixed parameters for a set of atoms is desired, pass identical lists for the two inputs
 # This will return all parameters, mixed and self-paired, as the self paired calculations reduce down
 # to their starting epsilon and sigma values
-# Writes the mixed values to an output file in the lj/coul/cut/long LAMMPS format:
-# pair_coeff ATOM#1 ATOM#2 EPSILONMIX SIGMAMIX LJcutoff CoulombicCutoff
+# Writes the mixed values to an output file in the lj/coul/cut/long or lj/coul LAMMPS format depending on if the charge interaction should be included:
+# pair_coeff ATOM#1 ATOM#2 EPSILONMIX SIGMAMIX [LJcutoff, CoulombicCutoff]
 import numpy as np
 import pandas as pd
 
 # Set atom numbers and their parameters
-# Atom types in UiO66. See data.UiO66 file for reference
+# All atoms in the acetone-UiO66 system
 UiO66Df = pd.DataFrame({'atom': [1,2,3,4,5, 6, 7, 8, 9],
 					    'epsilon': [.10500, .04400, .06000, .06000, .069000, 0.1569, 0.07948, 0.1947, 0.1947],
 					    'sigma': [3.430851, 2.571134, 3.118146, 3.118146, 2.783168, 3.050, 3.820, 3.750, 3.750]
 					    })
-# Atom types in acetone molecule. See in.lammps file for source
+# Identical df
 AceDf = pd.DataFrame({'atom': [1,2,3,4,5, 6, 7, 8, 9],
                       'epsilon': [.10500, .04400, .06000, .06000, .069000, 0.1569, 0.07948, 0.1947, 0.1947],
                       'sigma': [3.430851, 2.571134, 3.118146, 3.118146, 2.783168, 3.050, 3.820, 3.750, 3.750]
@@ -26,17 +26,18 @@ AceDf = pd.DataFrame({'atom': [1,2,3,4,5, 6, 7, 8, 9],
 # Unique identifiers for Atoms in each group
 AceAtoms = [6,7,8,9]
 UiO66Atoms = [1,2,3,4,5]
+
 # Element for each atom #. This is not necessary, but adds a comment to the end of each
 # pair_coeff line, stating the two elements envolved in the parameters on that line
 elements = ['C', 'H', 'O', 'O(mu3)', 'Zr', 'O(Ace)', 'C(Ace)', 'CH3(Ace)', 'CH3(Ace)']
 
-# Create a pairs list
+# Create pairs list
 UiO66DfRep = UiO66Df[['atom', 'epsilon', 'sigma']].loc[UiO66Df.index.repeat(AceDf.shape[0])].reset_index(drop=True)
 UiO66DfRep.columns = ['Atom1', '1eps', '1sigma']
 AceDfRep = pd.concat([AceDf[['atom', 'epsilon', 'sigma']]]*UiO66Df.shape[0], ignore_index=True)
 AceDfRep.columns = ['Atom2', '2eps', '2sigma']
 
-# Functions to calculate mixed parameters, using aritmetic method
+# Functions to calculate mixed parameters, using arithmatic method
 # epsilon_mixed = sqrt(epsilon_i, epsilon_j)
 # sigma_mixed = 0.5(sigma_i, sigma_j)
 mixedEpsilon = lambda eps1, eps2 : np.sqrt(eps1 * eps2)
