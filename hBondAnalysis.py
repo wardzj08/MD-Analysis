@@ -4,11 +4,11 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.productionAce1load.lammpstrj' # file to read trajectory from
+input_file = './data/dump.productionAce2load.lammpstrj' # file to read trajectory from
 snapshots_to_read = 501 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
-loading = 1 # level of loading  (diffusing molecules per primative cell)
+loading = 2 # level of loading  (diffusing molecules per primative cell)
 atoms_per_adsorbate = 4 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)
@@ -103,10 +103,11 @@ def num_atoms_check(num_MOF_atoms, loading, readinHatoms, readinAceOatoms, MOF_F
 	if calculatedAceOatoms != readinAceOatoms:
 		raise ValueError('The number of Acetone oxygen atoms read in from the trajectory file do not match the number of acetone atoms calculated. Check that your trajectory file and the inputed values are correct.')
 
-# Overall counts for Acetone oxygen - mu3OH hydrogen bonding and total number of Acetone molecules
-Ace_mu3HCount = 0 # Count of Acetone oxygens engaged in hydrogen bonding
+Ace_mu3HCount = 0 # Count of hydrogen bonds occuring between mu3H and Acetone
 totalAceCount = 0 # Count of total acetone molecules (also equals loading*primativeCells*numSnapshots)
-run_fractions = []
+totalmu3HCount = 0 # Count of total mu3H molecules
+run_fractionsAce = [] # list of individual snapshots hydrogen bonding fractions in relation to acetone molecules
+run_fractionsmu3H = [] # list of individual snapshots hydrogen bonding fractions in relation to mu3 hydrogens
 for snp in range(snapshots_to_read):
         print('\nSnapshot Number:', snp + 1)
         # Reads in 1 snapshot at a time
@@ -140,6 +141,7 @@ for snp in range(snapshots_to_read):
         #print('mu3O-H Pairs:')
 #        print(mu3OH.shape)
         #print(mu3OH.shape)
+
         # Some dataframe rearanging to format it for passing back into findMolPairsWithinDistance
         # Select only the hydrogens for acetone hydrogen bonding calculations
         mu3H = mu3OH[['Atom2', '2x', '2y', '2z']]
@@ -155,20 +157,30 @@ for snp in range(snapshots_to_read):
         # Atom1 in is acetone's oxygen, Atom2 is mu3 Hydrogen; x1,y1,z1 are coords for the oxygen; x2,y2,z2 are coords for hydrogen
         aceOmu3H = findMolPairsWithinDistance(Ace_Oxygen, mu3H, hydrogenBondDist, oneBondPerAtom1 = False)
 
-        # Show pairs of mu3 hydrogen and acetone oxygen that are in hydrogen bonding distance
+        # show the number of hydrogen bonding pairs
         print('Number of mu3OH - Acetone Hydrogen Bond Pairs: ', len(aceOmu3H))
+        # Show pairs of mu3 hydrogen and acetone oxygen that are in hydrogen bonding distance
         #print('Acetone-mu3OH Bond df: ')
         #print(aceOmu3H)
 
         # Add to count of acetone oxygen atoms that are in the hydrogen bonding distance to mu3 hydrogens
-        run_fractions = run_fractions + [len(aceOmu3H)/len(Ace_Oxygen)]
+        run_fractionsAce = run_fractionsAce + [len(aceOmu3H)/len(Ace_Oxygen)]
         Ace_mu3HCount += len(aceOmu3H)
         # Count the total number of acetone oxygens (should equal loading*primative cells*number of snapshots at the end)
         totalAceCount += len(Ace_Oxygen)
 
+        # add to fraction of mu3H hydrogen bonding list
+        run_fractionsmu3H = run_fractionsmu3H + [len(aceOmu3H)/len(mu3H)]
+        # Count the total number of mu3Hs in the system (128 each snapshot)
+        totalmu3HCount += len(mu3H)
+
 
 print('\nValues across {0} snapshots:'.format(snapshots_to_read))
-print('Number of hydrogen bonding acetone molecules:', Ace_mu3HCount)
-print('Total number of acetone molecules:',totalAceCount)
-print('Fraction of acetone molecules in hydrogen bonds with mu3OHs:', float(Ace_mu3HCount)/float(totalAceCount))
-print(f'Running average {np.mean(run_fractions)} + std deviation: {np.std(run_fractions)}')
+print('Number of hydrogen bonds molecules:', Ace_mu3HCount)
+print('Total number of acetone molecules:', totalAceCount)
+print('Fraction of acetone molecules in hydrogen bonds with mu3OHs:', round(float(Ace_mu3HCount)/float(totalAceCount), 6))
+print(f'Acetone average {round(np.mean(run_fractionsAce), 6)} + std deviation: {round(np.std(run_fractionsAce), 6)}')
+
+print('\nTotal number of mu3H molecules:', totalmu3HCount)
+print('Fraction of mu3H molecules in hydrogen bonds with acetone:', round(float(Ace_mu3HCount)/float(totalmu3HCount), 6))
+print(f'mu3H average {round(np.mean(run_fractionsmu3H), 6)} + std deviation: {round(np.std(run_fractionsmu3H), 6)}')
