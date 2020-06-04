@@ -20,7 +20,7 @@ mu3_O = 4 # 'Type' of atom that represents mu3 Oxygens in UiO66
 MOF_H = 2 # 'Type' of atom that represents hydrogens in the MOF (UiO66)
 Ace_O = 6 # 'Type' of acetone oxygen atom
 mu3OHBondDist = 1.2 # angstrom distance for the mu3OH bond
-hydrogenBondDist = 3.3 # Acetone-Hydrogen hydrogen bonding distance
+hydrogenBondDist = 3.3# Acetone-Hydrogen hydrogen bonding distance
 
 # Determines if  atom1s are within cutoff (bonding) distance of atom2s
 # for finding mu3 hydrogens, pass dataframe of hydrogens in as atom1 and mu3 oxygens as atom2
@@ -155,7 +155,7 @@ for snp in range(snapshots_to_read):
 
         # Finds mu3H-AcetoneO pairs that are within the hydrogen bonding cutoff distance
         # Atom1 in is acetone's oxygen, Atom2 is mu3 Hydrogen; x1,y1,z1 are coords for the oxygen; x2,y2,z2 are coords for hydrogen
-        aceOmu3H = findMolPairsWithinDistance(Ace_Oxygen, mu3H, hydrogenBondDist, oneBondPerAtom1 = False)
+        aceOmu3H = findMolPairsWithinDistance(mu3H, Ace_Oxygen, hydrogenBondDist, oneBondPerAtom1 = True)
 
         # show the number of hydrogen bonding pairs
         print('Number of mu3OH - Acetone Hydrogen Bond Pairs: ', len(aceOmu3H))
@@ -178,7 +178,7 @@ for snp in range(snapshots_to_read):
 print('\nValues across {0} snapshots:'.format(snapshots_to_read))
 print('Number of hydrogen bonds molecules:', Ace_mu3HCount)
 print('Total number of acetone molecules:', totalAceCount)
-print('Fraction of acetone molecules in hydrogen bonds with mu3OHs:', round(float(Ace_mu3HCount)/float(totalAceCount), 6))
+print('Fraction of acetone molecules in hydrogen bonds with mu3Hs:', round(float(Ace_mu3HCount)/float(totalAceCount), 6))
 print(f'Acetone average {round(np.mean(run_fractionsAce), 6)} + std deviation: {round(np.std(run_fractionsAce), 6)}')
 
 print('\nTotal number of mu3H molecules:', totalmu3HCount)
