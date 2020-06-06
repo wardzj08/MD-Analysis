@@ -32,24 +32,39 @@ def calc_center_of_masses(input_file, mass_dict, snapshots_to_read, num_atoms, a
         OCTACOMDEN = np.sum(dfOcta['mass'])
         TETRACOMDEN = np.sum(dfTetra['mass'])
   #      print(OCTACOMDEN, TETRACOMDEN)
-        
+
         # Function for calculating the COM in 1 dimension
-        # Inputs are atom position list in 1 dimension, masses of each atom, and the total mass of the group of atoms, 
+        # Inputs are atom position list in 1 dimension, masses of each atom, and the total mass of the group of atoms,
         CALCCOMDIR = lambda pos, mass, sumMass : np.sum(pos * mass) / sumMass
 
+        posCOMT = []
+        posCOMO = []
         # Calculate the COM in each dimension for each cage
         for pos in ['x', 'y', 'z']:
-            posCOMT = CALCCOMDIR(dfTetra[pos], dfTetra['mass'], TETRACOMDEN)
-            posCOMO = CALCCOMDIR(dfOcta[pos], dfOcta['mass'], OCTACOMDEN)
-   #         print(posCOMT, posCOMO)
+            posCOMT = posCOMT + [CALCCOMDIR(dfTetra[pos], dfTetra['mass'], TETRACOMDEN)]
+            posCOMO = posCOMO + [CALCCOMDIR(dfOcta[pos], dfOcta['mass'], OCTACOMDEN)]
+            print(len(tetrahedral), len(octahedral))
     return posCOMT, posCOMO
 
 
 snapshots_to_read = 1 # Read 1 snapshot to calculate COM, could look at more to see how COM changes as framework flexes, but it should remain more or less the same
 num_atoms = 4288 # Number of atoms in simulation
-atoms_per_adsorbate = 4 #  
+atoms_per_adsorbate = 4 #
 MOF_atoms = [444] # MOF molecule inteditifier(s)
 input_file = './data/dump.productionAce5load.lammpstrj' # file to read in
 MOF_masses = {'C': 12.01, 'H': 1.01, 'O': 15.999, 'Zr': 91.224} # masses of atoms in the MOF
 # Call to center of mass calculator
-coms = calc_center_of_masses(input_file, MOF_masses, snapshots_to_read, num_atoms, atoms_per_adsorbate, MOF_atoms) # Calculate COM call
+comT, comO = calc_center_of_masses(input_file, MOF_masses, snapshots_to_read, num_atoms, atoms_per_adsorbate, MOF_atoms) # Calculate COM call
+print(comT)
+print(comO)
+difs = [0, 0, 0]
+comT = np.array(comT)
+comO = np.array(comO)
+distCalc = lambda L1,L2 : np.sqrt((L1[0] - L2[0]) ** 2 + (L1[1] - L2[1]) ** 2 + (L1[2] - L2[2]) ** 2)
+distval = distCalc(comT, comO)
+print(distval)
+for pos in range(0,3):
+    difs[pos] = comO[pos] - comT[pos]
+
+
+print(difs/distval)
