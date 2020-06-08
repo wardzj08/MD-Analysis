@@ -42,8 +42,8 @@ def fct(LOCAce):
 
    #print(cartProd2)
    # Seperate into acetone atoms only array and MOF+Acetone array
-   LAce = CartProd[:, 1] # these are the Ace atoms
-   LMOF = CartProd[:, 0] # These are the MOF atoms + Ace atoms
+   LAce = cartProd2[:, 1] # these are the Ace atoms
+   LMOF = cartProd2[:, 0] # These are the MOF atoms + Ace atoms
    print(LAce[1], LMOF[1])
    # distance between each atom and each acetone atom
    # find distances between each acetone and each MOF atom, as well as distances between each acetone atoms
