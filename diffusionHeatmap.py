@@ -8,14 +8,14 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.image as mpimg
 
-df = pd.read_csv('dump.COMAce1Load.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
+df = pd.read_csv('dump.COM5Rigid.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
 #print(df.iloc[1])
 
 sns.set(rc={'figure.figsize':(10,10)})
-framework_img = mpimg.imread('UiO66frame2Nosim.png')
+framework_img = mpimg.imread('UiO66frame1.png')
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal')
-htmp = sns.kdeplot(df.x, df.y,
+htmp = sns.kdeplot(df.x, df.z,
                  cmap="Reds", shade=True, shade_lowest= False, n_levels = 100, gridsize = 100, ax = ax) # bw=.15,
 #im.collections[0].set_alpha(0)
 plt.imshow(framework_img, aspect = htmp.get_aspect(),

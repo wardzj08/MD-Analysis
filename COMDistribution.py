@@ -62,7 +62,7 @@ def calc_center_of_masses(input_file, mass_dict, snapshots_to_read, num_atoms, a
                     temp_atm = df_grouped.get_group(mol).iloc[j]
                     #print(temp_atm)
                     mass_sum += masses[temp_atm['element']]
-                    #print(mass_sum)
+                    print(mass_sum)
             
             n += 1
             # Check for groups that have atoms which do not add to the number of atoms in the adsorbate, ideally = 0
@@ -82,10 +82,10 @@ def calc_center_of_masses(input_file, mass_dict, snapshots_to_read, num_atoms, a
             # Calculate the center of mass using the values in the molecule list and the overall mass
             # COM calculation: SUM(Mass of atom n * (xn,yn,zn)) for n = 1 through n = num_adsorbate / mass_sum
            
-	    COM_SUM = 0
-	    for atom in range(atoms_per_adsorbate):
-	    	COM_SUM += molecule[atom]
-	    COM = COM_SUM / mass_sum
+        COM_SUM = 0
+        for atom in range(atoms_per_adsorbate):
+            COM_SUM += molecule[atom]
+            COM = COM_SUM / mass_sum
             #print(mol)
             #print(COM)
             # Add center of mass to list of COMs
@@ -95,12 +95,12 @@ def calc_center_of_masses(input_file, mass_dict, snapshots_to_read, num_atoms, a
 
 # Mass dictionary parameter. Store each unique mass value with its corresponding element, to be called in the COM fucnction
 # These are parameters to change based on each system
-masses = {'C': 12.01, 'O': 15.999}#, 'H': 1.007}
+masses = {'C': 12.01, 'O': 15.999, 'H': 1.007}
 snapshots_to_read = 500
 num_atoms = 4288
 atoms_per_adsorbate = 4
 MOF_atoms = [444]
-input_file = 'dump.production.lammpstrj'
+input_file = 'dump.production5Load.lammpstrj'
 # Call to center of mass calculator
 coms, err = calc_center_of_masses(input_file, masses, snapshots_to_read, num_atoms, atoms_per_adsorbate, MOF_atoms)
 # Center of mass to 3D histogram data file function. 
@@ -151,9 +151,9 @@ com_df['id'] = list(range(len(com_df['x'])))
 com_df['mol'] = [100 for x in range(len(com_df['x']))]
 com_df['type'] = [1 for x in range(len(com_df['x']))]
 
-with open('dump.COM.lammpstrj', 'w') as f:
+with open('dump.COM5Rigid.lammpstrj', 'w') as f:
     f.write('ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n80000\nITEM: BOX BOUNDS pp pp pp\n0.000e+00 4.14008e+01\n0.000e+00 4.14008e+01\n0.000e+00 4.14008e+01\nITEM: ATOMS ')
-com_df.to_csv('dump.COM.lammpstrj', sep = ' ', columns = ['id', 'mol', 'type', 'x', 'y', 'z'], index = False, mode = 'a')
+com_df.to_csv('dump.COM5Rigid.lammpstrj', sep = ' ', columns = ['id', 'mol', 'type', 'x', 'y', 'z'], index = False, mode = 'a')
 
 print('Number of Molecules in Distribution:', len(coms))
 print('Number of Molecules with less than the number of atoms in adsorbate molecule and thus not in the distribution:',err)

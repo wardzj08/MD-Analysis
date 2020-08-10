@@ -4,12 +4,12 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.productionDREIDINGACE0load.lammpstrj' # file to read trajectory from
-snapshots_to_read = 11 # Number of timesteps to read from traj file
+input_file = './data/dump.productionIPA2load.lammpstrj' # file to read trajectory from
+snapshots_to_read = 501 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
 loading = 3.125 # level of loading  (diffusing molecules per primative cell)
-atoms_per_adsorbate = 4 # number of atoms in the diffusing molecule
+atoms_per_adsorbate = 5 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)
 num_atoms = int(num_MOF_atoms + loading * atoms_per_adsorbate * num_MOF_atoms / (sum(MOF_Formula.values())))
@@ -18,9 +18,9 @@ print('Atoms in system: ', num_atoms)
 MOF_atoms = [444] # MOF molecule number(s) in the LAMMPSTRJ file
 mu3_O = 4 # 'Type' of atom that represents mu3 Oxygens in UiO66
 MOF_H = 2 # 'Type' of atom that represents hydrogens in the MOF (UiO66)
-Ace_O = 6 # 'Type' of acetone oxygen atom
+IPA_O = 7 # 'Type' of IPA oxygen atom
 mu3OHBondDist = 1.2 # angstrom distance for the mu3OH bond
-hydrogenBondDist = 2.0# Acetone-Hydrogen hydrogen bonding distance
+hydrogenBondDist = 3.3# Adsorbate-Hydrogen hydrogen bonding distance
 
 # Determines if  atom1s are within cutoff (bonding) distance of atom2s
 # for finding mu3 hydrogens, pass dataframe of hydrogens in as atom1 and mu3 oxygens as atom2
@@ -93,15 +93,18 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
 # Checks number of acetone molecules against the expected value at the given loading
 def num_atoms_check(num_MOF_atoms, loading, readinHatoms, readinAceOatoms, MOF_Formula):
 
-	calculatedHatoms = MOF_Formula['H'] * num_MOF_atoms/(sum(MOF_Formula.values()))
+    calculatedHatoms = MOF_Formula['H'] * num_MOF_atoms/(sum(MOF_Formula.values()))
+
 	# Check if the number of Hydrogen atoms in the MOF read in mataches the calculated value
-	if calculatedHatoms != readinHatoms:
-		raise ValueError('The number of H atoms in the MOF read in from the trajectory file do not match the number of H atoms calculated using the number of atoms in the MOF and the molecular formula of the MOF. Check input.')
+    if calculatedHatoms != readinHatoms:
+        print(calculatedHatoms)
+        print(readinHatoms)
+        raise ValueError('The number of H atoms in the MOF read in from the trajectory file do not match the number of H atoms calculated using the number of atoms in the MOF and the molecular formula of the MOF. Check input.')
 
     # Number of acetone atoms should equal the number of primative cells time the number of adsorbate atoms per cell
-	calculatedAceOatoms = num_MOF_atoms/(sum(MOF_Formula.values())) * loading
-	if calculatedAceOatoms != readinAceOatoms:
-		raise ValueError('The number of Acetone oxygen atoms read in from the trajectory file do not match the number of acetone atoms calculated. Check that your trajectory file and the inputed values are correct.')
+    calculatedAceOatoms = num_MOF_atoms/(sum(MOF_Formula.values())) * loading
+    if calculatedAceOatoms != readinAceOatoms:
+        raise ValueError('The number of Adsorbate oxygen atoms read in from the trajectory file do not match the number of adsorbate atoms calculated. Check that your trajectory file and the inputed values are correct.')
 
 Ace_mu3HCount = 0 # Count of hydrogen bonds occuring between mu3H and Acetone
 totalAceCount = 0 # Count of total acetone molecules (also equals loading*primativeCells*numSnapshots)
@@ -118,8 +121,8 @@ for snp in range(snapshots_to_read):
          # As a check the number of atoms in this should equal the number of Acetone molecules inserted
          # So for 2 loading per primative cell and 32 primative cells, there should be 64 Acetone oxygens
         # selects atoms that are Os and not in the MOF
-        Ace_Oxygen = df[df['type'] == Ace_O]
-        print('Number of Acetone Oxygen Atoms:', len(Ace_Oxygen))
+        Ace_Oxygen = df[df['type'] == IPA_O]
+        print('Number of IPA Oxygen Atoms:', len(Ace_Oxygen))
 
         # Store all MOF hydrogens and mu3 oxygens
         # Each of these have unique type values so they can be selected using only 1 identifier
@@ -158,7 +161,7 @@ for snp in range(snapshots_to_read):
         aceOmu3H = findMolPairsWithinDistance(mu3H, Ace_Oxygen, hydrogenBondDist, oneBondPerAtom1 = True)
 
         # show the number of hydrogen bonding pairs
-        print('Number of mu3OH - Acetone Hydrogen Bond Pairs: ', len(aceOmu3H))
+        print('Number of mu3OH - IPA Hydrogen Bond Pairs: ', len(aceOmu3H))
         # Show pairs of mu3 hydrogen and acetone oxygen that are in hydrogen bonding distance
         #print('Acetone-mu3OH Bond df: ')
         #print(aceOmu3H)
