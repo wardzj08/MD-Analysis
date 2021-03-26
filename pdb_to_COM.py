@@ -84,9 +84,10 @@ com_df['id'] = list(range(len(com_df['x'])))
 com_df['mol'] = [100 for x in range(len(com_df['x']))]
 com_df['type'] = [1 for x in range(len(com_df['x']))]
 
-with open('dump.COMNH3_1216A.lammpstrj', 'w') as f:
+fname_out = 'dump.COMNH3_1216A.lammpstrj'
+with open(fname_out, 'w') as f:
     f.write(f'ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n{len(COM)}\nITEM: BOX BOUNDS pp pp pp\n0.000e+00 {max(com_df.x)}\n0.000e+00 {max(com_df.y)}\n0.000e+00 {max(com_df.z)}\nITEM: ATOMS ')
-com_df.to_csv('dump.COMNH3_1216A.lammpstrj', sep = ' ', columns = ['id', 'mol', 'type', 'x', 'y', 'z'], index = False, mode = 'a')
+com_df.to_csv(fname_out, sep = ' ', columns = ['id', 'mol', 'type', 'x', 'y', 'z'], index = False, mode = 'a')
 
 print('Number of Molecules in Distribution:', len(COMs))
 print('Number of Molecules with less than the number of atoms in adsorbate molecule and thus not in the distribution:',err)
