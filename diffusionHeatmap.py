@@ -1,4 +1,4 @@
-# "Heatmap" plotter from diffusing molecule position data. Makes use of a kernal density estimator to plot a continuous function
+# "Heatmap" plotter for guest molecule position data. Makes use of a kernal density estimator to plot a continuous function
 # of the distribution of adsorbate molecules based on their center of masses. Displays the distribution over a still image of the MOF.
 import matplotlib
 matplotlib.use('Agg')
@@ -9,12 +9,12 @@ import seaborn as sns
 import matplotlib.image as mpimg
 
 df = pd.read_csv('dump.COMNH3_1216.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
-#print(df.iloc[1])
-
 sns.set(rc={'figure.figsize':(20,20)})
-framework_img = mpimg.imread('./data/1900Frame1.png')
+framework_img = mpimg.imread('./data/1900Frame1.png') # read in still framework file
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal')
+# Control heaatmap: vary n_levels, gridsize and bw to best display data. BW is the smoothing factor, increasing it makes the density plot more homogenous
+# as it approaches 0, individual molecules in the system stand out from one another
 htmp = sns.kdeplot(df.y, df.z,
                  cmap="Reds", shade=True, shade_lowest= False, n_levels = 25, gridsize = 100, bw = 4, ax = ax)#, cut=0) # bw=.15,
 #im.collections[0].set_alpha(0)
