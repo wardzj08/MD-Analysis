@@ -4,23 +4,23 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.productionIPA2load.lammpstrj' # file to read trajectory from
-snapshots_to_read = 501 # Number of timesteps to read from traj file
+input_file = './data/dump.RoggeIPAHbond0load.lammpstrj' # file to read trajectory from
+snapshots_to_read = 251 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
-loading = 3.125 # level of loading  (diffusing molecules per primative cell)
+loading = 3.125/2 # level of loading  (diffusing molecules per primative cell)
 atoms_per_adsorbate = 5 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)
 num_atoms = int(num_MOF_atoms + loading * atoms_per_adsorbate * num_MOF_atoms / (sum(MOF_Formula.values())))
 print('Atoms in system: ', num_atoms)
 
-MOF_atoms = [444] # MOF molecule number(s) in the LAMMPSTRJ file
-mu3_O = 4 # 'Type' of atom that represents mu3 Oxygens in UiO66
-MOF_H = 2 # 'Type' of atom that represents hydrogens in the MOF (UiO66)
-IPA_O = 7 # 'Type' of IPA oxygen atom
+MOF_atoms = [1] # MOF molecule number(s) in the LAMMPSTRJ file
+mu3_O = 7 # 'Type' of atom that represents mu3 Oxygens in UiO66
+MOF_H = 5 # 'Type' of atom that represents hydrogens in the MOF (UiO66)
+IPA_O = 11 # 'Type' of IPA oxygen atom
 mu3OHBondDist = 1.2 # angstrom distance for the mu3OH bond
-hydrogenBondDist = 3.3# Adsorbate-Hydrogen hydrogen bonding distance
+hydrogenBondDist = 1.8# Adsorbate-Hydrogen hydrogen bonding distance
 
 # Determines if  atom1s are within cutoff (bonding) distance of atom2s
 # for finding mu3 hydrogens, pass dataframe of hydrogens in as atom1 and mu3 oxygens as atom2
@@ -57,8 +57,37 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
         # Vectorized distance calculation
         # L1,L2 are the 2 arrays of locations for atom1 and atom2 respectivley
         calcDist = lambda L1,L2 : np.sqrt((L1[:, 0] - L2[:, 0]) ** 2 + (L1[:, 1] - L2[:, 1]) ** 2 + (L1[:, 2] - L2[:, 2]) ** 2)
-        distances = pd.DataFrame(calcDist(Loc1,Loc2), columns = ['Distance'])
+        def distance(L1, L2):
+                dims = [59.335999, 58.38648, 24.22381999]
+                tilts = [29.668, 14.834, 8.56442]
+                ddim = L2 - L1
+                for i in range(len(ddim)):
+                    if ddim[i, 0] > 0.5*dims[0]:
+                        ddim[i, 0] -= dims[0]
+                    if -ddim[i, 0] > 0.5*dims[0]:
+                        ddim[i, 0] += dims[0]
 
+                    if ddim[i, 1] > 0.5*dims[1]:
+                        ddim[i, 1] -= dims[1]
+                        ddim[i, 0] -= tilts[0]
+                    if -ddim[i, 1] > 0.5*dims[1]:
+                        ddim[i, 1] += dims[1]
+                        ddim[i, 0] += tilts[0]
+
+                    if ddim[i, 2] > 0.5*dims[2]:
+                        ddim[i, 2] -= dims[2]
+                        ddim[i, 0] -= tilts[1]
+                        ddim[i, 1] -= tilts[2]
+
+                    if -ddim[i, 2] > 0.5*dims[2]:
+                        ddim[i, 2] += dims[2]
+                        ddim[i, 0] += tilts[1]
+                        ddim[i, 1] += tilts[2]
+
+                dif = np.sqrt((ddim[:, 0]**2 + ddim[:, 1]**2 + ddim[:, 2]**2))
+                return dif
+        #distances = pd.DataFrame(calcDist(Loc1,Loc2), columns = ['Distance'])
+        distances = pd.DataFrame(distance(Loc1,Loc2), columns = ['Distance'])
        # Overall data frame of ATOM1-ATOM2
         Overall = pd.concat([df1_repeated, df2_repeated, distances], axis=1).reset_index(drop=True)
         #print('Overall')
@@ -115,7 +144,7 @@ for snp in range(snapshots_to_read):
         print('\nSnapshot Number:', snp + 1)
         # Reads in 1 snapshot at a time
         skips = num_atoms*snp + 9*(snp+1)
-        df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'element', 'x', 'y', 'z'], delim_whitespace=True)
+        df = pd.read_csv(input_file, skiprows = skips, nrows = num_atoms, error_bad_lines = False, names = ['Atom','mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
 
          # Select oxygen molecules in acetone (so all oxygens not in the MOF)
          # As a check the number of atoms in this should equal the number of Acetone molecules inserted
@@ -134,20 +163,20 @@ for snp in range(snapshots_to_read):
         # Only preform the check on the first snapshot/timestep
         # If the first is correct, the remaining should also be
         # Working on making this a bit more general
-        if snp == 0:
-            num_atoms_check(num_MOF_atoms, loading, len(MOFHydrogen), len(Ace_Oxygen), MOF_Formula)
+        #if snp == 0:
+         #   num_atoms_check(num_MOF_atoms, loading, len(MOFHydrogen), len(Ace_Oxygen), MOF_Formula)
 
 
         # Finds mu3O-H pairs that are within the bonding cutoff distance
         # Atom1 in mu3OH is oxygen, Atom2 is hydrogen; x1,y1,z1 are coords for oxygen; x2,y2,z2 are coords for hydrogen
-        mu3OH = findMolPairsWithinDistance(MOFOxygen, MOFHydrogen, mu3OHBondDist, oneBondPerAtom1 = False)
+        #mu3OH = findMolPairsWithinDistance(MOFOxygen, MOFHydrogen, mu3OHBondDist, oneBondPerAtom1 = False)
         #print('mu3O-H Pairs:')
 #        print(mu3OH.shape)
         #print(mu3OH.shape)
 
         # Some dataframe rearanging to format it for passing back into findMolPairsWithinDistance
         # Select only the hydrogens for acetone hydrogen bonding calculations
-        mu3H = mu3OH[['Atom2', '2x', '2y', '2z']]
+        mu3H = MOFHydrogen[['Atom', 'x', 'y', 'z']]
         # Columns need to be 'Atom', 'x', 'y', 'z'
         mu3H.columns = ['Atom', 'x', 'y', 'z']
 
@@ -158,7 +187,7 @@ for snp in range(snapshots_to_read):
 
         # Finds mu3H-AcetoneO pairs that are within the hydrogen bonding cutoff distance
         # Atom1 in is acetone's oxygen, Atom2 is mu3 Hydrogen; x1,y1,z1 are coords for the oxygen; x2,y2,z2 are coords for hydrogen
-        aceOmu3H = findMolPairsWithinDistance(mu3H, Ace_Oxygen, hydrogenBondDist, oneBondPerAtom1 = True)
+        aceOmu3H = findMolPairsWithinDistance(mu3H, Ace_Oxygen, hydrogenBondDist, oneBondPerAtom1 = False)
 
         # show the number of hydrogen bonding pairs
         print('Number of mu3OH - IPA Hydrogen Bond Pairs: ', len(aceOmu3H))
@@ -179,11 +208,11 @@ for snp in range(snapshots_to_read):
 
 
 print('\nValues across {0} snapshots:'.format(snapshots_to_read))
-print('Number of hydrogen bonds molecules:', Ace_mu3HCount)
-print('Total number of acetone molecules:', totalAceCount)
-print('Fraction of acetone molecules in hydrogen bonds with mu3Hs:', round(float(Ace_mu3HCount)/float(totalAceCount), 6))
-print(f'Acetone average {round(np.mean(run_fractionsAce), 6)} + std deviation: {round(np.std(run_fractionsAce), 6)}')
+print('Number of IPAO_mu3H hydrogen bonds:', Ace_mu3HCount)
+print('Total number of IPA molecules:', totalAceCount)
+print('Fraction of IPA molecules in hydrogen bonds with mu3Hs:', round(float(Ace_mu3HCount)/float(totalAceCount), 6))
+print(f'IPA average {round(np.mean(run_fractionsAce), 6)} + std deviation: {round(np.std(run_fractionsAce), 6)}')
 
 print('\nTotal number of mu3H molecules:', totalmu3HCount)
-print('Fraction of mu3H molecules in hydrogen bonds with acetone:', round(float(Ace_mu3HCount)/float(totalmu3HCount), 6))
+print('Fraction of mu3H molecules in hydrogen bonds with IPA:', round(float(Ace_mu3HCount)/float(totalmu3HCount), 6))
 print(f'mu3H average {round(np.mean(run_fractionsmu3H), 6)} + std deviation: {round(np.std(run_fractionsmu3H), 6)}')

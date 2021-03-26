@@ -8,18 +8,20 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.image as mpimg
 
-df = pd.read_csv('dump.COM5Rigid.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
+df = pd.read_csv('dump.COMNH3_1216.lammpstrj', skiprows = 9, names=['id', 'mol', 'type', 'x', 'y', 'z'], delim_whitespace=True)
 #print(df.iloc[1])
 
-sns.set(rc={'figure.figsize':(10,10)})
-framework_img = mpimg.imread('UiO66frame1.png')
+sns.set(rc={'figure.figsize':(20,20)})
+framework_img = mpimg.imread('./data/1900Frame1.png')
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal')
-htmp = sns.kdeplot(df.x, df.z,
-                 cmap="Reds", shade=True, shade_lowest= False, n_levels = 100, gridsize = 100, ax = ax) # bw=.15,
+htmp = sns.kdeplot(df.y, df.z,
+                 cmap="Reds", shade=True, shade_lowest= False, n_levels = 25, gridsize = 100, bw = 4, ax = ax)#, cut=0) # bw=.15,
 #im.collections[0].set_alpha(0)
-plt.imshow(framework_img, aspect = htmp.get_aspect(),
-          extent = [0, 41.4008, 0, 41.4008], zorder = 1)#im.get_xlim() + im.get_ylim(), zorder = 1)
+print(max(df.z))
+print(max(df.y))
+plt.imshow(framework_img, aspect = htmp.get_aspect(), zorder =1,
+          extent = [0, 64, 0, 47])#im.get_xlim() + im.get_ylim(), zorder = 1)
 # For no labels keep following two lines in
 plt.xlabel("")
 plt.ylabel("")
@@ -27,4 +29,9 @@ plt.ylabel("")
 plt.xticks([])
 plt.yticks([])
 plt.show()
-plt.savefig('MoleculeDistributionAce1LoadinUiO66TESTnosimnoTicks.png', bbox_inches = 'tight')
+plt.savefig('UiO67_NH3Ads2_P1216_Smooth4.png', bbox_inches = 'tight')
+#plt.pcolormesh(X,Y,Z)
+
+
+
+
