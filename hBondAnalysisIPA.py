@@ -4,11 +4,11 @@ import numpy as np
 pd.set_option('display.max_columns', None)
 
 # variables to be changed based on input
-input_file = './data/dump.RoggeIPAHbond0load.lammpstrj' # file to read trajectory from
-snapshots_to_read = 251 # Number of timesteps to read from traj file
+input_file = 'data/dump.7LoadIPA.lammpstrj'#'./data/dump.RoggeIPAHbond0load.lammpstrj' # file to read trajectory from
+snapshots_to_read = 25 # Number of timesteps to read from traj file
 num_MOF_atoms = 3648 # Atoms in the MOF (UIO66)
 MOF_Formula = {'c': 48, 'H': 28, 'O': 32, 'Zr': 6} # Dictionary form of the molecular formula for the MOF
-loading = 3.125/2 # level of loading  (diffusing molecules per primative cell)
+loading = 7#3.125/2 # level of loading  (diffusing molecules per primative cell)
 atoms_per_adsorbate = 5 # number of atoms in the diffusing molecule
 
 # total atoms in system = MOFAtoms + AtomsPerAdsorbate * AdsorbateAtomsPerPrimativeCell(loading) * numPrimativeCells(MOFATOMS/ATOMSPERPRIMATIVECELL)
@@ -16,11 +16,12 @@ num_atoms = int(num_MOF_atoms + loading * atoms_per_adsorbate * num_MOF_atoms / 
 print('Atoms in system: ', num_atoms)
 
 MOF_atoms = [1] # MOF molecule number(s) in the LAMMPSTRJ file
-mu3_O = 7 # 'Type' of atom that represents mu3 Oxygens in UiO66
+mu3_O = 8 # 'Type' of atom that represents mu3 Oxygens in UiO66
 MOF_H = 5 # 'Type' of atom that represents hydrogens in the MOF (UiO66)
 IPA_O = 11 # 'Type' of IPA oxygen atom
+IPA_H = 10
 mu3OHBondDist = 1.2 # angstrom distance for the mu3OH bond
-hydrogenBondDist = 1.8# Adsorbate-Hydrogen hydrogen bonding distance
+hydrogenBondDist = 3# Adsorbate-Hydrogen hydrogen bonding distance
 
 # Determines if  atom1s are within cutoff (bonding) distance of atom2s
 # for finding mu3 hydrogens, pass dataframe of hydrogens in as atom1 and mu3 oxygens as atom2
@@ -87,7 +88,7 @@ def findMolPairsWithinDistance(ATOM1DF, ATOM2DF, cutoff, oneBondPerAtom1 = False
                 dif = np.sqrt((ddim[:, 0]**2 + ddim[:, 1]**2 + ddim[:, 2]**2))
                 return dif
         #distances = pd.DataFrame(calcDist(Loc1,Loc2), columns = ['Distance'])
-        distances = pd.DataFrame(distance(Loc1,Loc2), columns = ['Distance'])
+        distances = pd.DataFrame(calcDist(Loc1,Loc2), columns = ['Distance'])
        # Overall data frame of ATOM1-ATOM2
         Overall = pd.concat([df1_repeated, df2_repeated, distances], axis=1).reset_index(drop=True)
         #print('Overall')
@@ -150,7 +151,7 @@ for snp in range(snapshots_to_read):
          # As a check the number of atoms in this should equal the number of Acetone molecules inserted
          # So for 2 loading per primative cell and 32 primative cells, there should be 64 Acetone oxygens
         # selects atoms that are Os and not in the MOF
-        Ace_Oxygen = df[df['type'] == IPA_O]
+        Ace_Oxygen = df[df['type'] == IPA_H]
         print('Number of IPA Oxygen Atoms:', len(Ace_Oxygen))
 
         # Store all MOF hydrogens and mu3 oxygens
@@ -179,7 +180,9 @@ for snp in range(snapshots_to_read):
         mu3H = MOFHydrogen[['Atom', 'x', 'y', 'z']]
         # Columns need to be 'Atom', 'x', 'y', 'z'
         mu3H.columns = ['Atom', 'x', 'y', 'z']
-
+        mu3O = MOFOxygen[['Atom', 'x', 'y', 'z']]
+        # Columns need to be 'Atom', 'x', 'y', 'z'
+        mu3O.columns = ['Atom', 'x', 'y', 'z']
         # show dataframe of just mu3 hydrogen
         print('Number of mu3-Hs: ', len(mu3H))
        # print('mu3H df: ')
@@ -187,7 +190,7 @@ for snp in range(snapshots_to_read):
 
         # Finds mu3H-AcetoneO pairs that are within the hydrogen bonding cutoff distance
         # Atom1 in is acetone's oxygen, Atom2 is mu3 Hydrogen; x1,y1,z1 are coords for the oxygen; x2,y2,z2 are coords for hydrogen
-        aceOmu3H = findMolPairsWithinDistance(mu3H, Ace_Oxygen, hydrogenBondDist, oneBondPerAtom1 = False)
+        aceOmu3H = findMolPairsWithinDistance(mu3O, Ace_Oxygen, hydrogenBondDist, oneBondPerAtom1 = False)
 
         # show the number of hydrogen bonding pairs
         print('Number of mu3OH - IPA Hydrogen Bond Pairs: ', len(aceOmu3H))

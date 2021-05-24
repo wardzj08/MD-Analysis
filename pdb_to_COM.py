@@ -14,7 +14,7 @@ masses = {'N': 14.01, 'H': 1.007} # massses associated with each atom
    This will read in all atoms in the file, regardless of being part of seperate models.
    This is good for looking at averages across snapshots
    """
-f = './data/NH3_1216.pdb' # pdb file with guest molecules only
+f = './NH3_UiO67_2736_guestOnly.pdb' # pdb file with guest molecules only
 for line in open(f):
     v = line.split()
     id = v[0]
@@ -84,9 +84,9 @@ com_df['id'] = list(range(len(com_df['x'])))
 com_df['mol'] = [100 for x in range(len(com_df['x']))]
 com_df['type'] = [1 for x in range(len(com_df['x']))]
 
-fname_out = 'dump.COMNH3_1216A.lammpstrj'
+fname_out = 'dump.COMNH3_P2736.lammpstrj'
 with open(fname_out, 'w') as f:
-    f.write(f'ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n{len(COM)}\nITEM: BOX BOUNDS pp pp pp\n0.000e+00 {max(com_df.x)}\n0.000e+00 {max(com_df.y)}\n0.000e+00 {max(com_df.z)}\nITEM: ATOMS ')
+    f.write(f'ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n{len(com_df)}\nITEM: BOX BOUNDS pp pp pp\n0.000e+00 {max(com_df.x)}\n0.000e+00 {max(com_df.y)}\n0.000e+00 {max(com_df.z)}\nITEM: ATOMS ')
 com_df.to_csv(fname_out, sep = ' ', columns = ['id', 'mol', 'type', 'x', 'y', 'z'], index = False, mode = 'a')
 
 print('Number of Molecules in Distribution:', len(COMs))
