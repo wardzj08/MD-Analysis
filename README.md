@@ -1,3 +1,4 @@
+# Ignore README, Old info
 # Molecular Dynamics Trajectory Analysis
 
 #### Scripts for analysis of LAMMPS trajectory outputs.
